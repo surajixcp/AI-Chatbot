@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Application</title>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* General body styling */
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    /* Floating chat button */
+    #chat-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #007bff, #00bfff);
+      color: white;
+      border: none;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #chat-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Chatbot container */
+    #chatbot-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 350px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    #chatbot-container.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Chatbot header */
+    #chatbot-header {
+      background: linear-gradient(135deg, #007bff, #00bfff);
+      color: white;
+      padding: 15px;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #chatbot-header h3 {
+      margin: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #chatbot-header h3 i {
+      font-size: 24px;
+    }
+
+    #minimize-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    #minimize-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* Chat area */
+    #chat-area {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: rgba(255, 255, 255, 0.8);
+      scrollbar-width: thin;
+      scrollbar-color: #007bff #f1f1f1;
+    }
+
+    #chat-area::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #chat-area::-webkit-scrollbar-thumb {
+      background-color: #007bff;
+      border-radius: 4px;
+    }
+
+    #chat-area::-webkit-scrollbar-track {
+      background-color: rgba(241, 241, 241, 0.5);
+    }
+
+    /* Input area */
+    #input-area {
+      display: flex;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-top: 1px solid rgba(221, 221, 221, 0.5);
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(221, 221, 221, 0.5);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    #user-input:focus {
+      border-color: #007bff;
+    }
+
+    #send-btn {
+      background: linear-gradient(135deg, #007bff, #00bfff);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin-left: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.3s ease;
+    }
+
+    #send-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Message styling */
+    .message {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .user-message {
+      background: linear-gradient(135deg, #007bff, #00bfff);
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .bot-message {
+      background-color: rgba(241, 241, 241, 0.9);
+      color: #333;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .message img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    /* Typing indicator */
+    #typing-indicator {
+      display: none;
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: rgba(241, 241, 241, 0.9);
+      border-radius: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 480px) {
+      #chatbot-container {
+        width: 90%;
+        height: 70%;
+        right: 5%;
+        bottom: 80px;
+      }
+
+      #chat-btn {
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating chat button -->
+  <button id="chat-btn"><i class="fas fa-comment-dots"></i></button>
+
+  <!-- Chatbot container -->
+  <div id="chatbot-container">
+    <div id="chatbot-header">
+      <h3><i class="fas fa-robot"></i> Chatbot</h3>
+      <button id="minimize-btn"><i class="fas fa-minus"></i></button>
+    </div>
+    <div id="chat-area"></div>
+    <div id="typing-indicator">Bot is typing...</div>
+    <div id="input-area">
+      <input type="text" id="user-input" placeholder="Type a message...">
+      <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const chatBtn = document.getElementById('chat-btn');
+    const chatbotContainer = document.getElementById('chatbot-container');
+    const minimizeBtn = document.getElementById('minimize-btn');
+    const chatArea = document.getElementById('chat-area');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    // API configuration
+    const OPENROUTER_API_KEY = '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';
+    const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+    // Toggle chatbot visibility
+    chatBtn.addEventListener('click', () => {
+      chatbotContainer.classList.toggle('visible');
+      chatbotContainer.style.display = chatbotContainer.classList.contains('visible') ? 'flex' : 'none';
+    });
+
+    // Minimize chatbot
+    minimizeBtn.addEventListener('click', () => {
+      chatbotContainer.classList.remove('visible');
+      setTimeout(() => {
+        chatbotContainer.style.display = 'none';
+      }, 300);
+    });
+
+    // Send message
+    sendBtn.addEventListener('click', () => {
+      sendMessage();
+    });
+
+    // Send message on Enter key
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    // Function to send a message
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (message === '') return;
+
+      // Display user message
+      appendMessage('user', message);
+
+      // Show typing indicator
+      typingIndicator.style.display = 'block';
+
+      // Fetch bot response from OpenRouter API
+      try {
+        const botResponse = await getBotResponse(message);
+        typingIndicator.style.display = 'none'; // Hide typing indicator
+        appendMessage('bot', botResponse);
+      } catch (error) {
+        typingIndicator.style.display = 'none'; // Hide typing indicator
+        appendMessage('bot', 'Sorry, something went wrong. Please try again.');
+      }
+
+      // Clear input
+      userInput.value = '';
+    }
+
+    // Function to append a message to the chat area
+    function appendMessage(sender, message) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', `${sender}-message`);
+
+      // Add avatar
+      const avatar = document.createElement('i');
+      avatar.classList.add('fas', sender === 'user' ? 'fa-user' : 'fa-robot');
+      messageElement.appendChild(avatar);
+
+      // Add message content
+      const content = document.createElement('div');
+      content.textContent = message;
+      messageElement.appendChild(content);
+
+      // Add timestamp
+      const timestamp = document.createElement('div');
+      timestamp.classList.add('timestamp');
+      timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      messageElement.appendChild(timestamp);
+
+      chatArea.appendChild(messageElement);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // Function to fetch bot response from OpenRouter API
+    async function getBotResponse(message) {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.href, // Optional
+          'X-Title': 'Chatbot Application' // Optional
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat:free',
+          messages: [
+            {
+              role: 'user',
+              content: message
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch bot response');
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+  </script>
+</body>
+</html>
